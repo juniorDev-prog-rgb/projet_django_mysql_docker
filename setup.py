@@ -96,6 +96,72 @@ def add_sample_devices():
         print(f"❌ Erreur lors de l'ajout des appareils d'exemple: {e}")
         return False
 
+def setup_test_environment():
+    """Configure l'environnement de test"""
+    print("\n🧪 Configuration de l'environnement de test...")
+    try:
+        # Créer le répertoire de test
+        test_dir = "tests"
+        if not os.path.exists(test_dir):
+            os.makedirs(test_dir)
+        
+        # Créer les fichiers de test de base s'ils n'existent pas
+        test_files = {
+            "tests/__init__.py": "",
+            "tests/conftest.py": """import pytest
+import tempfile
+import os
+from app import create_app, db
+
+@pytest.fixture
+def app():
+    db_fd, db_path = tempfile.mkstemp()
+    test_config = {
+        'TESTING': True,
+        'SQLALCHEMY_DATABASE_URI': f'sqlite:///{db_path}',
+        'SECRET_KEY': 'test-secret-key',
+        'WTF_CSRF_ENABLED': False
+    }
+    
+    app = create_app()
+    app.config.update(test_config)
+    
+    with app.app_context():
+        db.create_all()
+        yield app
+        db.drop_all()
+    
+    os.close(db_fd)
+    os.unlink(db_path)
+
+@pytest.fixture
+def client(app):
+    return app.test_client()
+""",
+            "tests/test_basic.py": """def test_app_exists(app):
+    assert app is not None
+
+def test_app_is_testing(app):
+    assert app.config['TESTING']
+
+def test_index_page(client):
+    response = client.get('/')
+    assert response.status_code == 200
+"""
+        }
+        
+        for file_path, content in test_files.items():
+            if not os.path.exists(file_path):
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                with open(file_path, 'w') as f:
+                    f.write(content)
+        
+        print("✅ Environnement de test configuré")
+        return True
+    except Exception as e:
+        print(f"❌ Erreur lors de la configuration des tests: {e}")
+        return False
+
 def main():
     """Fonction principale d'installation"""
     print("🚀 Installation du Système de Surveillance Réseau")
@@ -136,6 +202,9 @@ def main():
     
     # Configurer la base de données
     setup_database()
+    
+    # Configurer l'environnement de test
+    setup_test_environment()
     
     print("\n" + "=" * 50)
     print("🎉 Installation terminée avec succès!")
