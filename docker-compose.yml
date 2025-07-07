@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=sqlite:///data/network_monitoring.db
+      - SECRET_KEY=dev-secret-key-for-docker
+      - MONITORING_INTERVAL=30
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      # Volume pour le développement (optionnel)
+      - .:/app
+    restart: unless-stopped
+    networks:
+      - monitoring-network
+
+  # Service pour les tests de connectivité réseau (optionnel)
+  network-tools:
+    image: nicolaka/netshoot
+    command: sleep infinity
+    networks:
+      - monitoring-network
+    profiles:
+      - tools
+
+networks:
+  monitoring-network:
+    driver: bridge
+
+volumes:
+  monitoring-data:
+    driver: local
