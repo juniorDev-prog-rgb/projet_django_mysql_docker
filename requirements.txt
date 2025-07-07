@@ -10,3 +10,10 @@ python-dotenv==1.0.0
 eventlet==0.33.3
 gunicorn==21.2.0
 requests==2.31.0
+
+# Dépendances de développement et test
+pytest==7.4.2
+pytest-cov==4.1.0
+pytest-mock==3.11.1
+flake8==6.0.0
+black==23.7.0
